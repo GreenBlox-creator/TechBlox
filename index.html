@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechBlox - Twoja Platforma Gier</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Witaj w TechBlox!</h1>
+    <button id="login-btn">Zaloguj się</button>
+    <button id="logout-btn" hidden>Wyloguj się</button>
+  </header>
+
+  <main>
+    <section id="editor">
+      <h2>Kreator Gier 3D</h2>
+      <canvas id="game-canvas"></canvas>
+    </section>
+  </main>
+
+  <!-- Firebase + auth obsługa -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyARjazP75T45zT9IXTfGXBecvU8KU2Ycq4",
+      authDomain: "techblox-92e78.firebaseapp.com",
+      projectId: "techblox-92e78",
+      storageBucket: "techblox-92e78.firebasestorage.app",
+      messagingSenderId: "928885599438",
+      appId: "1:928885599438:web:5ca444fce144bcf258349f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+
+    const loginBtn = document.getElementById("login-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+
+    loginBtn.addEventListener("click", () => {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider);
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      signOut(auth);
+    });
+
+    onAuthStateChanged(auth, (user) => {
+  if (user) {
+    window.location.href = "home.html"; // Przenosi zalogowanego użytkownika
+  }
+});
+
+  </script>
+</body>
+</html>
