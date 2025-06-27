@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechBlox: Strona domowa</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Cześć, <span id="nickname">...</span> 👋</h1>
+  </header>
+
+  <main>
+    <section>
+      <p>Masz <span id="friend-count">0</span> znajomych</p>
+      <p>Ostatnio grałeś w: <span id="last-played">Brak</span></p>
+    </section>
+
+    <section>
+      <h2>Polecane Gry</h2>
+      <div class="game-card" onclick="location.href='games_1_test.html'">
+        <img src="assets/test_game_icon.jpg" alt="Test Game" />
+        <h3>Test</h3>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = { /* Twój config tutaj */ };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore();
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        document.getElementById("nickname").textContent = user.displayName;
+
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          document.getElementById("friend-count").textContent = data.friends ?? 0;
+          document.getElementById("last-played").textContent = data.lastPlayed ?? "Brak";
+        }
+      }
+    });
+  </script>
+</body>
+</html>
