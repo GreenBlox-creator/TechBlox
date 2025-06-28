@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechBlox: Create Place</title>
+  <script>
+    UPLOADCARE_PUBLIC_KEY = "a6a724fd93c22c1723d0";
+  </script>
+  <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+
+    form {
+      max-width: 400px;
+      margin-bottom: 40px;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    .place-list {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    .place-item {
+      margin-bottom: 10px;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      cursor: pointer;
+    }
+
+    .place-item:hover {
+      background-color: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Create Place</h1>
+
+  <form id="create-form">
+    <input type="text" id="title" placeholder="Tytuł gry" required />
+    <textarea id="description" placeholder="Opis gry" rows="3" required></textarea>
+    <input type="hidden" role="uploadcare-uploader" id="icon-upload" data-crop="1:1" data-images-only />
+    <button type="submit">Utwórz nową grę</button>
+  </form>
+
+  <div class="place-list">
+    <h2>Created Places (<span id="place-count">0</span>)</h2>
+    <div id="place-container"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      query,
+      where,
+      getDocs,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyARjazP75T45zT9IXTfGXBecvU8KU2Ycq4",
+      authDomain: "techblox-92e78.firebaseapp.com",
+      projectId: "techblox-92e78",
+      storageBucket: "techblox-92e78.firebasestorage.app",
+      messagingSenderId: "928885599438",
+      appId: "1:928885599438:web:5ca444fce144bcf258349f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore();
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      } else {
+        currentUser = user;
+        loadUserGames();
+      }
+    });
+
+    const form = document.getElementById("create-form");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const title = document.getElementById("title").value.trim();
+      const description = document.getElementById("description").value.trim();
+      const widget = uploadcare.Widget("#icon-upload");
+
+      const file = await widget.value();
+      if (!file) return alert("Wybierz ikonę gry!");
+
+      const fileInfo = await file.promise();
+
+      await addDoc(collection(db, "games"), {
+        title,
+        description,
+        iconUrl: fileInfo.cdnUrl,
+        owner: currentUser.uid,
+        createdAt: serverTimestamp()
+      });
+
+      alert("Gra została utworzona!");
+      form.reset();
+      loadUserGames();
+    });
+
+    async function loadUserGames() {
+      const q = query(collection(db, "games"), where("owner", "==", currentUser.uid));
+      const querySnapshot = await getDocs(q);
+
+      const container = document.getElementById("place-container");
+      const countSpan = document.getElementById("place-count");
+
+      container.innerHTML = "";
+      countSpan.textContent = querySnapshot.size;
+
+      querySnapshot.forEach(doc => {
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.className = "place-item";
+        div.textContent = data.title;
+        div.onclick = () => {
+          // Możesz przekierować do edytora np. edit_place.html?id=doc.id
+          window.location.href = `edit_place.html?id=${doc.id}`;
+        };
+        container.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
