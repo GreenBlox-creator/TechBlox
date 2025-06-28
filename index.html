@@ -3,27 +3,57 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TechBlox - Twoja Platforma Gier</title>
+  <title>TechBlox - Logowanie</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    form {
+      max-width: 300px;
+      margin: 20px auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    .center {
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>Witaj w TechBlox!</h1>
-    <button id="login-btn">Zaloguj się</button>
-    <button id="logout-btn" hidden>Wyloguj się</button>
-  </header>
+  <h1 class="center">Witaj w TechBlox!</h1>
 
-  <main>
-    <section id="editor">
-      <h2>Kreator Gier 3D</h2>
-      <canvas id="game-canvas"></canvas>
-    </section>
-  </main>
+  <form id="auth-form">
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Hasło" required />
+    <button type="submit">Zaloguj się</button>
+    <button type="button" id="register-btn">Zarejestruj się</button>
+  </form>
 
-  <!-- Firebase + auth obsługa -->
+  <div class="center">
+    <p>lub</p>
+    <button id="google-login">Zaloguj przez Google</button>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      signInWithPopup,
+      GoogleAuthProvider,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyARjazP75T45zT9IXTfGXBecvU8KU2Ycq4",
@@ -37,24 +67,48 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth();
 
-    const loginBtn = document.getElementById("login-btn");
-    const logoutBtn = document.getElementById("logout-btn");
+    const form = document.getElementById("auth-form");
+    const registerBtn = document.getElementById("register-btn");
+    const googleLogin = document.getElementById("google-login");
 
-    loginBtn.addEventListener("click", () => {
-      const provider = new GoogleAuthProvider();
-      signInWithPopup(auth, provider);
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (error) {
+        alert("Błąd logowania: " + error.message);
+      }
     });
 
-    logoutBtn.addEventListener("click", () => {
-      signOut(auth);
+    registerBtn.addEventListener("click", async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        alert("Konto utworzone!");
+      } catch (error) {
+        alert("Błąd rejestracji: " + error.message);
+      }
+    });
+
+    googleLogin.addEventListener("click", async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        alert("Błąd logowania Google: " + error.message);
+      }
     });
 
     onAuthStateChanged(auth, (user) => {
-  if (user) {
-    window.location.href = "home.html"; // Przenosi zalogowanego użytkownika
-  }
-});
-
+      if (user) {
+        window.location.href = "home.html";
+      }
+    });
   </script>
 </body>
 </html>
