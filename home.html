@@ -5,10 +5,87 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TechBlox: Strona domowa</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #1e1e2f;
+      color: white;
+      padding: 10px 20px;
+    }
+
+    .nav-left, .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .nav-left a, .nav-right span, .nav-right button {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .nav-left a:hover {
+      text-decoration: underline;
+    }
+
+    .search-bar {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .search-bar input {
+      width: 300px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: none;
+    }
+
+    main {
+      padding: 20px;
+    }
+
+    .game-card {
+      width: 150px;
+      text-align: center;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .game-card img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+  </style>
 </head>
 <body>
   <header>
-    <h1>Cześć, <span id="nickname">...</span> 👋</h1>
+    <div class="nav-left">
+      <a href="home.html">Home</a>
+      <a href="katalog.html">Katalog</a>
+      <a href="create.html">Create</a>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" placeholder="Szukaj gier..." />
+    </div>
+
+    <div class="nav-right">
+      <span id="nickname">...</span>
+      <button id="logout-btn">Wyloguj</button>
+    </div>
   </header>
 
   <main>
@@ -20,7 +97,7 @@
     <section>
       <h2>Polecane Gry</h2>
       <div class="game-card" onclick="location.href='games_1_test.html'">
-        <img src="assets/test_game_icon.jpg" alt="Test Game" />
+        <img id="test-icon" src="assets/test_game_icon.jpg" alt="Test Game" />
         <h3>Test</h3>
       </div>
     </section>
@@ -28,17 +105,32 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
     import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-    const firebaseConfig = { /* Twój config tutaj */ };
+    const firebaseConfig = {
+      apiKey: "AIzaSyARjazP75T45zT9IXTfGXBecvU8KU2Ycq4",
+      authDomain: "techblox-92e78.firebaseapp.com",
+      projectId: "techblox-92e78",
+      storageBucket: "techblox-92e78.firebasestorage.app",
+      messagingSenderId: "928885599438",
+      appId: "1:928885599438:web:5ca444fce144bcf258349f"
+    };
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth();
     const db = getFirestore();
 
+    const logoutBtn = document.getElementById("logout-btn");
+    const nicknameSpan = document.getElementById("nickname");
+
+    logoutBtn.addEventListener("click", () => {
+      signOut(auth);
+    });
+
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        document.getElementById("nickname").textContent = user.displayName;
+        nicknameSpan.textContent = user.displayName;
 
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
@@ -46,6 +138,15 @@
           document.getElementById("friend-count").textContent = data.friends ?? 0;
           document.getElementById("last-played").textContent = data.lastPlayed ?? "Brak";
         }
+
+        // Pobierz ikonę gry "Test"
+        const gameDoc = await getDoc(doc(db, "games", "test"));
+        if (gameDoc.exists()) {
+          const gameData = gameDoc.data();
+          document.getElementById("test-icon").src = gameData.iconUrl;
+        }
+      } else {
+        window.location.href = "index.html";
       }
     });
   </script>
