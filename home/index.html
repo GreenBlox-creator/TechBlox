@@ -3,57 +3,110 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TechBlox - Logowanie</title>
+  <title>TechBlox: Strona domowa</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #1e1e2f;
+      color: white;
+      padding: 10px 20px;
+    }
+
+    .nav-left, .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .nav-left a, .nav-right span, .nav-right button {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .nav-left a:hover {
+      text-decoration: underline;
+    }
+
+    .search-bar {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .search-bar input {
+      width: 300px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: none;
+    }
+
+    main {
       padding: 20px;
     }
 
-    form {
-      max-width: 300px;
-      margin: 20px auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    input, button {
-      padding: 10px;
-      font-size: 16px;
-    }
-
-    .center {
+    .game-card {
+      width: 150px;
       text-align: center;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .game-card img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
-  <h1 class="center">Witaj w TechBlox!</h1>
+  <header>
+    <div class="nav-left">
+      <a href="home.html">Home</a>
+      <a href="katalog.html">Katalog</a>
+      <a href="create.html">Create</a>
+    </div>
 
-  <form id="auth-form">
-    <input type="email" id="email" placeholder="Email" required />
-    <input type="password" id="password" placeholder="Hasło" required />
-    <button type="submit">Zaloguj się</button>
-    <button type="button" id="register-btn">Zarejestruj się</button>
-  </form>
+    <div class="search-bar">
+      <input type="text" placeholder="Szukaj gier..." />
+    </div>
 
-  <div class="center">
-    <p>lub</p>
-    <button id="google-login">Zaloguj przez Google</button>
-  </div>
+    <div class="nav-right">
+      <span id="nickname">...</span>
+      <button id="logout-btn">Wyloguj</button>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <p>Masz <span id="friend-count">0</span> znajomych</p>
+      <p>Ostatnio grałeś w: <span id="last-played">Brak</span></p>
+    </section>
+
+    <section>
+      <h2>Polecane Gry</h2>
+      <div class="game-card" onclick="location.href='games_1_test.html'">
+        <img id="test-icon" src="assets/test_game_icon.jpg" alt="Test Game" />
+        <h3>Test</h3>
+      </div>
+    </section>
+  </main>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import {
-      getAuth,
-      signInWithEmailAndPassword,
-      createUserWithEmailAndPassword,
-      signInWithPopup,
-      GoogleAuthProvider,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyARjazP75T45zT9IXTfGXBecvU8KU2Ycq4",
@@ -66,49 +119,36 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth();
+    const db = getFirestore();
 
-    const form = document.getElementById("auth-form");
-    const registerBtn = document.getElementById("register-btn");
-    const googleLogin = document.getElementById("google-login");
+    const logoutBtn = document.getElementById("logout-btn");
+    const nicknameSpan = document.getElementById("nickname");
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-      } catch (error) {
-        alert("Błąd logowania: " + error.message);
-      }
+    logoutBtn.addEventListener("click", () => {
+      signOut(auth);
     });
 
-    registerBtn.addEventListener("click", async () => {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        alert("Konto utworzone!");
-      } catch (error) {
-        alert("Błąd rejestracji: " + error.message);
-      }
-    });
-
-    googleLogin.addEventListener("click", async () => {
-      const provider = new GoogleAuthProvider();
-      try {
-        await signInWithPopup(auth, provider);
-      } catch (error) {
-        alert("Błąd logowania Google: " + error.message);
-      }
-    });
-
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
-        window.location.href = "home.html";
+        nicknameSpan.textContent = user.displayName;
+
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          document.getElementById("friend-count").textContent = data.friends ?? 0;
+          document.getElementById("last-played").textContent = data.lastPlayed ?? "Brak";
+        }
+
+        // Pobierz ikonę gry "Test"
+        const gameDoc = await getDoc(doc(db, "games", "test"));
+        if (gameDoc.exists()) {
+          const gameData = gameDoc.data();
+          document.getElementById("test-icon").src = gameData.iconUrl;
+        }
+      } else {
+        window.location.href = "index.html";
       }
     });
   </script>
 </body>
-  </html>
+</html>
